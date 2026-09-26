@@ -36,6 +36,7 @@ int main(void)
         printf("4 - Положить предмет\n");
         printf("5 - Выбросить предмет\n");
         printf("6 - Любимый ресурс\n");
+        printf("7 - Выбросить предмет по ID\n");
         printf("Выберите действие: ");
 
         if (scanf("%d", &choice) != 1)
@@ -80,7 +81,9 @@ int main(void)
 
                 if (hours < 0)
                 {
-                    printf("Ошибка: количество часов не может быть отрицательным.\n");
+                    printf(
+                        "Ошибка: количество часов не может быть отрицательным.\n"
+                    );
                     break;
                 }
 
@@ -92,7 +95,11 @@ int main(void)
                     current_day++;
                 }
 
-                printf("Время перемотано на %d часов.\n", hours);
+                printf(
+                    "Время перемотано на %d часов.\n",
+                    hours
+                );
+
                 break;
             }
 
@@ -159,7 +166,9 @@ int main(void)
 
                 printf(
                     "В слот %d добавлен предмет: %s\n",
-                    slot,
+
+
+slot,
                     item_names[item_id]
                 );
 
@@ -168,9 +177,7 @@ int main(void)
 
             case 5:
             {
-
-
-int slot;
+                int slot;
 
                 printf(
                     "Введите номер слота для очистки (0-%d): ",
@@ -234,7 +241,9 @@ int slot;
                 }
                 else if (max_count == 1)
                 {
-                    printf("Все предметы встречаются по одному разу.\n");
+                    printf(
+                        "Все предметы встречаются по одному разу.\n"
+                    );
                 }
                 else
                 {
@@ -253,6 +262,46 @@ int slot;
                 break;
             }
 
+            case 7:
+            {
+                int item_id;
+                int cleared_slots = 0;
+
+                printf("Введите ID предмета для удаления: ");
+
+                if (scanf("%d", &item_id) != 1)
+                {
+                    printf("Ошибка: нужно ввести число.\n");
+
+                    while (getchar() != '\n')
+                        ;
+
+                    break;
+                }
+
+                if (item_id < 1 || item_id > 9)
+                {
+                    printf("Ошибка: неверный ID предмета.\n");
+                    break;
+                }
+
+                for (int i = 0; i < INVENTORY_SIZE; i++)
+                {
+                    if (inventory[i] == item_id)
+                    {
+                        inventory[i] = 0;
+                        cleared_slots++;
+                    }
+                }
+
+                printf(
+                    "Очищено слотов: %d\n",
+                    cleared_slots
+                );
+
+                break;
+            }
+
             default:
                 printf("Ошибка: такого пункта меню нет.\n");
         }
@@ -260,6 +309,9 @@ int slot;
 
     return 0;
 }
+
+
+
 
 
 
