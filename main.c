@@ -48,14 +48,55 @@ int main(void)
             continue;
         }
 
-        if (choice == 0)
+        switch (choice)
         {
-            printf("Программа завершена.\n");
-            break;
-        }
+            case 0:
+                printf("Программа завершена.\n");
+                return 0;
 
-        printf("Функция пока не реализована.\n");
-    }
+            case 1:
+                printf(
+                    "Сейчас день %d, %02d:00\n",
+                    current_day,
+                    current_hour
+                );
+                break;
 
-    return 0;
+            case 2:
+            {
+                int hours;
+
+                printf("Введите количество часов: ");
+
+                if (scanf("%d", &hours) != 1)
+                {
+                    printf("Ошибка ввода!\n");
+
+                    while (getchar() != '\n')
+                        ;
+
+                    break;
+                }
+
+                if (hours < 0)
+                {
+                    printf("Количество часов не может быть отрицательным!\n");
+                    break;
+                }
+
+                current_hour += hours;
+
+                while (current_hour >= 24)
+                {
+                    current_hour -= 24;
+                    current_day++;
+                }
+
+                printf("Время перемотано на %d часов.\n", hours);
+                break;
+            }
+           }
+          }
+          return 0;
 }
+
