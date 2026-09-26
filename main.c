@@ -40,7 +40,7 @@ int main(void)
 
         if (scanf("%d", &choice) != 1)
         {
-            printf("Ошибка ввода!\n");
+            printf("Ошибка: нужно ввести число.\n");
 
             while (getchar() != '\n')
                 ;
@@ -70,7 +70,7 @@ int main(void)
 
                 if (scanf("%d", &hours) != 1)
                 {
-                    printf("Ошибка ввода!\n");
+                    printf("Ошибка: нужно ввести число.\n");
 
                     while (getchar() != '\n')
                         ;
@@ -80,7 +80,7 @@ int main(void)
 
                 if (hours < 0)
                 {
-                    printf("Количество часов не может быть отрицательным!\n");
+                    printf("Ошибка: количество часов не может быть отрицательным.\n");
                     break;
                 }
 
@@ -123,7 +123,7 @@ int main(void)
 
                 if (scanf("%d", &slot) != 1)
                 {
-                    printf("Ошибка ввода!\n");
+                    printf("Ошибка: нужно ввести число.\n");
 
                     while (getchar() != '\n')
                         ;
@@ -133,7 +133,7 @@ int main(void)
 
                 if (slot < 0 || slot >= INVENTORY_SIZE)
                 {
-                    printf("Такого слота нет.\n");
+                    printf("Ошибка: такого слота нет.\n");
                     break;
                 }
 
@@ -141,7 +141,7 @@ int main(void)
 
                 if (scanf("%d", &item_id) != 1)
                 {
-                    printf("Ошибка ввода!\n");
+                    printf("Ошибка: нужно ввести число.\n");
 
                     while (getchar() != '\n')
                         ;
@@ -151,7 +151,7 @@ int main(void)
 
                 if (item_id < 0 || item_id > 9)
                 {
-                    printf("Неверный ID предмета.\n");
+                    printf("Ошибка: неверный ID предмета.\n");
                     break;
                 }
 
@@ -168,7 +168,9 @@ int main(void)
 
             case 5:
             {
-                int slot;
+
+
+int slot;
 
                 printf(
                     "Введите номер слота для очистки (0-%d): ",
@@ -177,7 +179,7 @@ int main(void)
 
                 if (scanf("%d", &slot) != 1)
                 {
-                    printf("Ошибка ввода!\n");
+                    printf("Ошибка: нужно ввести число.\n");
 
                     while (getchar() != '\n')
                         ;
@@ -187,7 +189,7 @@ int main(void)
 
                 if (slot < 0 || slot >= INVENTORY_SIZE)
                 {
-                    printf("Такого слота нет.\n");
+                    printf("Ошибка: такого слота нет.\n");
                     break;
                 }
 
@@ -252,7 +254,7 @@ int main(void)
             }
 
             default:
-                printf("Такого пункта нет.\n");
+                printf("Ошибка: такого пункта меню нет.\n");
         }
     }
 
