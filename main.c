@@ -95,8 +95,113 @@ int main(void)
                 printf("Время перемотано на %d часов.\n", hours);
                 break;
             }
-           }
-          }
-          return 0;
-}
 
+            case 3:
+                printf("\n===== ИНВЕНТАРЬ =====\n");
+
+                for (int i = 0; i < INVENTORY_SIZE; i++)
+                {
+                    printf(
+                        "Слот %d: ID %d (%s)\n",
+                        i,
+                        inventory[i],
+                        item_names[inventory[i]]
+                    );
+                }
+
+                break;
+
+            case 4:
+            {
+                int slot;
+                int item_id;
+
+                printf("Введите номер слота (0-%d): ", INVENTORY_SIZE - 1);
+
+                if (scanf("%d", &slot) != 1)
+                {
+                    printf("Ошибка ввода!\n");
+
+                    while (getchar() != '\n')
+                        ;
+
+                    break;
+                }
+
+                if (slot < 0 || slot >= INVENTORY_SIZE)
+                {
+                    printf("Такого слота нет.\n");
+                    break;
+                }
+
+                printf("Введите ID предмета (0-9): ");
+
+                if (scanf("%d", &item_id) != 1)
+                {
+                    printf("Ошибка ввода!\n");
+
+                    while (getchar() != '\n')
+                        ;
+
+                    break;
+                }
+
+                if (item_id < 0 || item_id > 9)
+                {
+                    printf("Неверный ID предмета.\n");
+                    break;
+                }
+
+                inventory[slot] = item_id;
+
+                printf(
+                    "В слот %d добавлен предмет: %s\n",
+                    slot,
+                    item_names[item_id]
+                );
+
+                break;
+            }
+
+            case 5:
+            {
+                int slot;
+
+                printf(
+                    "Введите номер слота для очистки (0-%d): ",
+                    INVENTORY_SIZE - 1
+                );
+
+                if (scanf("%d", &slot) != 1)
+                {
+                    printf("Ошибка ввода!\n");
+
+                    while (getchar() != '\n')
+                        ;
+
+                    break;
+                }
+
+                if (slot < 0 || slot >= INVENTORY_SIZE)
+                {
+                    printf("Такого слота нет.\n");
+                    break;
+                }
+
+                printf(
+                    "Удалён предмет: %s\n",
+                    item_names[inventory[slot]]
+                );
+
+                inventory[slot] = 0;
+
+                break;
+            }
+
+            default:
+                printf("Такого пункта нет.\n");
+        }
+    }
+
+    return 0;
+}
