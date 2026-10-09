@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <string.h>
 
 #define INVENTORY_SIZE 10
+#define ITEM_COUNT 10
+#define MAX_NAME_LEN 32
 
 int main(void)
 {
@@ -11,24 +14,73 @@ int main(void)
         4, 6, 0, 2, 0, 3, 8, 0, 1, 0
     };
 
-    const char *item_names[10] = {
-        "пусто",
-        "дерево",
-        "камень",
-        "семена",
-        "лопата",
-        "грабли",
-        "тяпка",
-        "телега",
-        "лейка",
-        "корзина"
+    char item_names[ITEM_COUNT][MAX_NAME_LEN] = {
+        "Пусто", "Дерево", "Камень", "Семена", "Лопата",
+        "Грабли", "Тяпка", "Телега", "Лейка", "Корзина"
     };
 
+    char farmer_name[MAX_NAME_LEN];
     int choice;
+
+    FILE *file = fopen("items.txt", "r");
+
+    if (file == NULL)
+    {
+        printf("Предупреждение: items.txt не найден.\n");
+        printf("Используются названия по умолчанию.\n");
+    }
+    else
+    {
+        int item_id;
+        char item_name[MAX_NAME_LEN];
+
+        while (fscanf(file, "%d %31s", &item_id, item_name) == 2)
+        {
+            if (item_id >= 0 && item_id < ITEM_COUNT)
+            {
+                strcpy(item_names[item_id], item_name);
+            }
+        }
+
+        fclose(file);
+        printf("Каталог предметов загружен.\n");
+    }
+
+    printf("Введите имя фермера: ");
+
+    if (fgets(farmer_name, MAX_NAME_LEN, stdin) == NULL)
+    {
+        strcpy(farmer_name, "Фермер");
+    }
+    else
+    {
+        size_t length = strlen(farmer_name);
+
+        if (length > 0 && farmer_name[length - 1] == '\n')
+        {
+            farmer_name[length - 1] = '\0';
+        }
+        else
+        {
+            int ch;
+
+            while ((ch = getchar()) != '\n' && ch != EOF)
+            {
+            }
+        }
+
+        if (farmer_name[0] == '\0')
+        {
+            strcpy(farmer_name, "Фермер");
+        }
+    }
+
+    printf("\nДобро пожаловать на ферму, %s!\n", farmer_name);
 
     while (1)
     {
         printf("\n===== ФЕРМА =====\n");
+        printf("Фермер: %s\n", farmer_name);
         printf("0 - Выход\n");
         printf("1 - Текущее время\n");
         printf("2 - Промотать время\n");
@@ -48,6 +100,9 @@ int main(void)
 
             continue;
         }
+
+        while (getchar() != '\n')
+            ;
 
         switch (choice)
         {
@@ -79,6 +134,9 @@ int main(void)
                     break;
                 }
 
+                while (getchar() != '\n')
+                    ;
+
                 if (hours < 0)
                 {
                     printf(
@@ -95,11 +153,7 @@ int main(void)
                     current_day++;
                 }
 
-                printf(
-                    "Время перемотано на %d часов.\n",
-                    hours
-                );
-
+                printf("Время перемотано на %d часов.\n", hours);
                 break;
             }
 
@@ -123,10 +177,7 @@ int main(void)
                 int slot;
                 int item_id;
 
-                printf(
-                    "Введите номер слота (0-%d): ",
-                    INVENTORY_SIZE - 1
-                );
+                printf("Введите номер слота (0-9): ");
 
                 if (scanf("%d", &slot) != 1)
                 {
@@ -137,6 +188,9 @@ int main(void)
 
                     break;
                 }
+
+                while (getchar() != '\n')
+                    ;
 
                 if (slot < 0 || slot >= INVENTORY_SIZE)
                 {
@@ -156,7 +210,10 @@ int main(void)
                     break;
                 }
 
-                if (item_id < 0 || item_id > 9)
+                while (getchar() != '\n')
+                    ;
+
+                if (item_id < 0 || item_id >= ITEM_COUNT)
                 {
                     printf("Ошибка: неверный ID предмета.\n");
                     break;
@@ -166,9 +223,7 @@ int main(void)
 
                 printf(
                     "В слот %d добавлен предмет: %s\n",
-
-
-slot,
+                    slot,
                     item_names[item_id]
                 );
 
@@ -179,10 +234,7 @@ slot,
             {
                 int slot;
 
-                printf(
-                    "Введите номер слота для очистки (0-%d): ",
-                    INVENTORY_SIZE - 1
-                );
+                printf("Введите номер слота для очистки (0-9): ");
 
                 if (scanf("%d", &slot) != 1)
                 {
@@ -194,19 +246,17 @@ slot,
                     break;
                 }
 
+                while (getchar() != '\n')
+                    ;
+
                 if (slot < 0 || slot >= INVENTORY_SIZE)
                 {
                     printf("Ошибка: такого слота нет.\n");
                     break;
                 }
 
-                printf(
-                    "Удалён предмет: %s\n",
-                    item_names[inventory[slot]]
-                );
-
+                printf("Удалён предмет: %s\n", item_names[inventory[slot]]);
                 inventory[slot] = 0;
-
                 break;
             }
 
@@ -241,9 +291,7 @@ slot,
                 }
                 else if (max_count == 1)
                 {
-                    printf(
-                        "Все предметы встречаются по одному разу.\n"
-                    );
+                    printf("Все предметы встречаются по одному разу.\n");
                 }
                 else
                 {
@@ -253,10 +301,7 @@ slot,
                         favorite_id
                     );
 
-                    printf(
-                        "Количество: %d\n",
-                        max_count
-                    );
+                    printf("Количество: %d\n", max_count);
                 }
 
                 break;
@@ -279,7 +324,10 @@ slot,
                     break;
                 }
 
-                if (item_id < 1 || item_id > 9)
+                while (getchar() != '\n')
+                    ;
+
+                if (item_id < 1 || item_id >= ITEM_COUNT)
                 {
                     printf("Ошибка: неверный ID предмета.\n");
                     break;
@@ -294,11 +342,7 @@ slot,
                     }
                 }
 
-                printf(
-                    "Очищено слотов: %d\n",
-                    cleared_slots
-                );
-
+                printf("Очищено слотов: %d\n", cleared_slots);
                 break;
             }
 
@@ -309,10 +353,6 @@ slot,
 
     return 0;
 }
-
-
-
-
 
 
 
