@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,12 +5,46 @@
 #include <windows.h>
 #include <wchar.h>
 #include <errno.h>
+#include <time.h>
 
 #define INVENTORY_SIZE 10
 #define ITEM_COUNT 10
 #define MAX_NAME_LEN 64
 #define MAX_INPUT_LEN 256
 #define MAX_ARTICLE_LEN 512
+#define MAX_ITEM_LINE_LEN 256
+
+#define MIN_MAP_SIZE 5
+#define MAX_MAP_SIZE 30
+#define MIN_OBSTACLE_PERCENT 15
+#define MAX_OBSTACLE_PERCENT 30
+#define MIN_TRAP_PERCENT 5
+#define MAX_TRAP_PERCENT 10
+#define SAFE_PASS_PERCENT 50
+#define PERCENT_BASE 100
+
+#define TILE_WALL '#'
+#define TILE_FLOOR '.'
+#define TILE_TREE 'T'
+#define TILE_ROCK 'R'
+#define TILE_DOWN_STAIR 'D'
+#define TILE_UP_STAIR 'U'
+#define TILE_CRACKED ','
+
+#define TRAP_NONE 0
+#define TRAP_HIDDEN 1
+#define TRAP_EXPOSED 2
+
+typedef struct
+{
+    char **cells;
+    unsigned char **traps;
+    int width;
+    int height;
+    int player_x;
+    int player_y;
+    int depth;
+} Dungeon;
 
 /* Чтение текста с поддержкой русского ввода в Windows */
 int read_text(char *text, int size)
@@ -88,7 +121,7 @@ void load_items(char names[ITEM_COUNT][MAX_NAME_LEN])
         return;
     }
 
-    char line[256];
+    char line[MAX_ITEM_LINE_LEN];
     int loaded = 0;
 
     while (fgets(line, sizeof(line), file) != NULL)
