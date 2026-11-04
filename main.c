@@ -303,6 +303,86 @@ void process_encyclopedia(const char *word)
     printf("Результат сохранён в output.txt.\n");
 }
 
+/* Выделение динамической двумерной карты */
+char **allocate_char_matrix(int height, int width)
+{
+    char **matrix = calloc((size_t)height, sizeof(char *));
+
+    if (matrix == NULL)
+        return NULL;
+
+    for (int y = 0; y < height; y++)
+    {
+        matrix[y] = malloc((size_t)width * sizeof(char));
+
+        if (matrix[y] == NULL)
+        {
+            for (int i = height - 1; i >= 0; i--)
+                free(matrix[i]);
+
+            free(matrix);
+            return NULL;
+        }
+    }
+
+    return matrix;
+}
+
+/* Выделение динамической матрицы состояний ловушек */
+unsigned char **allocate_trap_matrix(int height, int width)
+{
+    unsigned char **matrix = calloc((size_t)height, sizeof(unsigned char *));
+
+    if (matrix == NULL)
+        return NULL;
+
+    for (int y = 0; y < height; y++)
+    {
+        matrix[y] = calloc((size_t)width, sizeof(unsigned char));
+
+        if (matrix[y] == NULL)
+        {
+            for (int i = height - 1; i >= 0; i--)
+                free(matrix[i]);
+
+            free(matrix);
+            return NULL;
+        }
+    }
+
+    return matrix;
+}
+
+/* Освобождение обеих динамических матриц */
+void free_dungeon(Dungeon *dungeon)
+{
+    if (dungeon == NULL)
+        return;
+
+    if (dungeon->traps != NULL)
+    {
+        for (int y = dungeon->height - 1; y >= 0; y--)
+            free(dungeon->traps[y]);
+
+        free(dungeon->traps);
+        dungeon->traps = NULL;
+    }
+
+    if (dungeon->cells != NULL)
+    {
+        for (int y = dungeon->height - 1; y >= 0; y--)
+            free(dungeon->cells[y]);
+
+        free(dungeon->cells);
+        dungeon->cells = NULL;
+    }
+
+    dungeon->width = 0;
+    dungeon->height = 0;
+    dungeon->player_x = 0;
+    dungeon->player_y = 0;
+}
+
 int main(void)
 {
     SetConsoleCP(CP_UTF8);
