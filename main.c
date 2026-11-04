@@ -383,6 +383,226 @@ void free_dungeon(Dungeon *dungeon)
     dungeon->player_y = 0;
 }
 
+/* Подсчёт обычных свободных клеток */
+int count_free_cells(const Dungeon *dungeon)
+{
+    int count = 0;
+
+    for (int y = 1; y < dungeon->height - 1; y++)
+        for (int x = 1; x < dungeon->width - 1; x++)
+            if (dungeon->cells[y][x] == TILE_FLOOR)
+                count++;
+
+    return count;
+}
+
+/* Выбор случайной свободной клетки, кроме указанной позиции */
+int find_random_floor(const Dungeon *dungeon, int excluded_x,
+                      int excluded_y, int *result_x, int *result_y)
+{
+    int count = 0;
+
+    for (int y = 1; y < dungeon->height - 1; y++)
+    {
+        for (int x = 1; x < dungeon->width - 1; x++)
+        {
+            if (dungeon->cells[y][x] == TILE_FLOOR &&
+                dungeon->traps[y][x] == TRAP_NONE &&
+                !(x == excluded_x && y == excluded_y))
+                count++;
+        }
+    }
+
+    if (count == 0)
+        return 0;
+
+    int selected = rand() % count;
+
+    for (int y = 1; y < dungeon->height - 1; y++)
+    {
+        for (int x = 1; x < dungeon->width - 1; x++)
+        {
+            if (dungeon->cells[y][x] == TILE_FLOOR &&
+                dungeon->traps[y][x] == TRAP_NONE &&
+                !(x == excluded_x && y == excluded_y))
+            {
+                if (selected == 0)
+                {
+                    *result_x = x;
+                    *result_y = y;
+                    return 1;
+                }
+
+                selected--;
+            }
+        }
+    }
+
+    return 0;
+}
+
+/* Размещение лестницы наверх рядом с героем */
+void place_upstairs_near_player(Dungeon *dungeon)
+{
+    int dx[] = {0, 1, 0, -1};
+    int dy[] = {-1, 0, 1, 0};
+    int candidate_x[4];
+    int candidate_y[4];
+    int candidate_count = 0;
+
+    for (int i = 0; i < 4; i++)
+    {
+        int x = dungeon->player_x + dx[i];
+        int y = dungeon->player_y + dy[i];
+
+        if (x <= 0 || x >= dungeon->width - 1 ||
+            y <= 0 || y >= dungeon->height - 1)
+            continue;
+
+        if (dungeon->cells[y][x] == TILE_DOWN_STAIR)
+            continue;
+
+        if (dungeon->cells[y][x] == TILE_FLOOR)
+        {
+            candidate_x[candidate_count] = x;
+            candidate_y[candidate_count] = y;
+            candidate_count++;
+        }
+    }
+
+    if (candidate_count == 0)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            int x = dungeon->player_x + dx[i];
+            int y = dungeon->player_y + dy[i];
+
+            if (x > 0 && x < dungeon->width - 1 &&
+                y > 0 && y < dungeon->height - 1 &&
+                dungeon->cells[y][x] != TILE_DOWN_STAIR)
+            {
+                candidate_x[candidate_count] = x;
+                candidate_y[candidate_count] = y;
+                candidate_count++;
+            }
+        }
+    }
+
+    if (candidate_count > 0)
+    {
+        int selected = rand() % candidate_count;
+        int x = candidate_x[selected];
+        int y = candidate_y[selected];
+
+        dungeon->cells[y][x] = TILE_UP_STAIR;
+        dungeon->traps[y][x] = TRAP_NONE;
+    }
+}
+
+/* Генерация нового этажа подземелья */
+int generate_dungeon(Dungeon *dungeon, int create_upstairs)
+{
+    if (dungeon == NULL)
+        return 0;
+
+    free_dungeon(dungeon);
+
+    dungeon->height = rand() % (MAX_MAP_SIZE - MIN_MAP_SIZE + 1) + MIN_MAP_SIZE;
+    dungeon->width = rand() % (MAX_MAP_SIZE - MIN_MAP_SIZE + 1) + MIN_MAP_SIZE;
+
+    dungeon->cells = allocate_char_matrix(dungeon->height, dungeon->width);
+    dungeon->traps = allocate_trap_matrix(dungeon->height, dungeon->width);
+
+    if (dungeon->cells == NULL || dungeon->traps == NULL)
+    {
+        free_dungeon(dungeon);
+        return 0;
+    }
+
+    int obstacle_percent = rand() %
+        (MAX_OBSTACLE_PERCENT - MIN_OBSTACLE_PERCENT + 1) +
+        MIN_OBSTACLE_PERCENT;
+
+    for (int y = 0; y < dungeon->height; y++)
+    {
+        for (int x = 0; x < dungeon->width; x++)
+        {
+            if (y == 0 || y == dungeon->height - 1 ||
+                x == 0 || x == dungeon->width - 1)
+                dungeon->cells[y][x] = TILE_WALL;
+            else if (rand() % PERCENT_BASE < obstacle_percent)
+                dungeon->cells[y][x] = (rand() % 2 == 0) ? TILE_TREE : TILE_ROCK;
+            else
+                dungeon->cells[y][x] = TILE_FLOOR;
+        }
+    }
+
+    int required_floor = create_upstairs ? 3 : 2;
+
+    while (count_free_cells(dungeon) < required_floor)
+    {
+        int cleared = 0;
+
+        for (int y = 1; y < dungeon->height - 1 && !cleared; y++)
+        {
+            for (int x = 1; x < dungeon->width - 1; x++)
+            {
+                if (dungeon->cells[y][x] == TILE_TREE ||
+                    dungeon->cells[y][x] == TILE_ROCK)
+                {
+                    dungeon->cells[y][x] = TILE_FLOOR;
+                    cleared = 1;
+                    break;
+                }
+            }
+        }
+
+        if (!cleared)
+        {
+            free_dungeon(dungeon);
+            return 0;
+        }
+    }
+
+    if (!find_random_floor(dungeon, -1, -1,
+                           &dungeon->player_x, &dungeon->player_y))
+    {
+        free_dungeon(dungeon);
+        return 0;
+    }
+
+    int down_x;
+    int down_y;
+
+    if (!find_random_floor(dungeon, dungeon->player_x, dungeon->player_y,
+                           &down_x, &down_y))
+    {
+        free_dungeon(dungeon);
+        return 0;
+    }
+
+    dungeon->cells[down_y][down_x] = TILE_DOWN_STAIR;
+
+    if (create_upstairs)
+        place_upstairs_near_player(dungeon);
+
+    int trap_percent = rand() %
+        (MAX_TRAP_PERCENT - MIN_TRAP_PERCENT + 1) + MIN_TRAP_PERCENT;
+
+    for (int y = 1; y < dungeon->height - 1; y++)
+    {
+        for (int x = 1; x < dungeon->width - 1; x++)
+        {
+            if (dungeon->cells[y][x] == TILE_FLOOR &&
+                !(x == dungeon->player_x && y == dungeon->player_y) &&
+                rand() % PERCENT_BASE < trap_percent)
+                dungeon->traps[y][x] = TRAP_HIDDEN;
+        }
+    }
+
+    return 1;
+}
+
 int main(void)
 {
     SetConsoleCP(CP_UTF8);
