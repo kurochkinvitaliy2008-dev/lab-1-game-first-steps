@@ -603,11 +603,183 @@ int generate_dungeon(Dungeon *dungeon, int create_upstairs)
     return 1;
 }
 
+/* Отображение карты и положения героя */
+void print_dungeon(const Dungeon *dungeon)
+{
+    printf("\n===== ПОДЗЕМЕЛЬЕ: ЭТАЖ %d =====\n", dungeon->depth);
+    printf("Размер карты: %d x %d\n", dungeon->width, dungeon->height);
+
+    for (int y = 0; y < dungeon->height; y++)
+    {
+        for (int x = 0; x < dungeon->width; x++)
+        {
+            if (x == dungeon->player_x && y == dungeon->player_y)
+                putchar('@');
+            else
+                putchar(dungeon->cells[y][x]);
+        }
+
+        putchar('\n');
+    }
+
+    printf("W/A/S/D - движение, Q - домой (только на U)\n");
+}
+
+/* Создание следующего этажа с освобождением предыдущего */
+int go_to_next_floor(Dungeon *dungeon, int create_upstairs)
+{
+    dungeon->depth++;
+
+    if (!generate_dungeon(dungeon, create_upstairs))
+    {
+        printf("Не удалось выделить память для новой карты.\n");
+        return 0;
+    }
+
+    printf("Сгенерирован этаж %d.\n", dungeon->depth);
+    return 1;
+}
+
+/* Попытка переместить героя на соседнюю клетку */
+int move_in_dungeon(Dungeon *dungeon, int dx, int dy)
+{
+    int new_x = dungeon->player_x + dx;
+    int new_y = dungeon->player_y + dy;
+
+    if (new_x < 0 || new_x >= dungeon->width ||
+        new_y < 0 || new_y >= dungeon->height)
+    {
+        printf("За пределами карты пройти нельзя.\n");
+        return 1;
+    }
+
+    char target = dungeon->cells[new_y][new_x];
+
+    if (target == TILE_WALL || target == TILE_TREE || target == TILE_ROCK)
+    {
+        printf("Путь преграждает препятствие.\n");
+        return 1;
+    }
+
+    if (dungeon->traps[new_y][new_x] == TRAP_HIDDEN)
+    {
+        dungeon->traps[new_y][new_x] = TRAP_EXPOSED;
+        dungeon->cells[new_y][new_x] = TILE_CRACKED;
+        dungeon->player_x = new_x;
+        dungeon->player_y = new_y;
+        printf("Осторожно, скрипучий пол!\n");
+        return 1;
+    }
+
+    if (dungeon->traps[new_y][new_x] == TRAP_EXPOSED)
+    {
+        if (rand() % PERCENT_BASE < SAFE_PASS_PERCENT)
+        {
+            dungeon->player_x = new_x;
+            dungeon->player_y = new_y;
+            printf("Пол скрипит! Вы прошли безопасно.\n");
+            return 1;
+        }
+
+        printf("Пол с треском проломился! Вы падаете на следующий этаж.\n");
+        return go_to_next_floor(dungeon, 0);
+    }
+
+    dungeon->player_x = new_x;
+    dungeon->player_y = new_y;
+
+    if (target == TILE_DOWN_STAIR)
+    {
+        printf("Вы спустились по лестнице вниз.\n");
+        return go_to_next_floor(dungeon, 1);
+    }
+
+    return 1;
+}
+
+/* Игровой цикл приключения */
+void run_adventure(void)
+{
+    Dungeon dungeon = {0};
+    dungeon.depth = 1;
+
+    if (!generate_dungeon(&dungeon, 1))
+    {
+        printf("Не удалось создать подземелье.\n");
+        free_dungeon(&dungeon);
+        return;
+    }
+
+    printf("Вы отправились в подземелье. Найдите лестницу D.\n");
+
+    int adventure_active = 1;
+
+    while (adventure_active)
+    {
+        char command[MAX_INPUT_LEN];
+        print_dungeon(&dungeon);
+        printf("Ваш ход: ");
+
+        if (!read_text(command, sizeof(command)) || command[0] == '\0')
+        {
+            printf("Введите одну клавишу: W, A, S, D или Q.\n");
+            continue;
+        }
+
+        if (command[1] != '\0')
+        {
+            printf("Введите только одну клавишу.\n");
+            continue;
+        }
+
+        char key = (char)toupper((unsigned char)command[0]);
+
+        if (key == 'Q')
+        {
+            if (dungeon.cells[dungeon.player_y][dungeon.player_x] == TILE_UP_STAIR)
+            {
+                printf("Вы нашли путь домой!\n");
+                adventure_active = 0;
+            }
+            else
+                printf("Домой можно вернуться только с лестницы U.\n");
+
+            continue;
+        }
+
+        switch (key)
+        {
+            case 'W':
+                adventure_active = move_in_dungeon(&dungeon, 0, -1);
+                break;
+
+            case 'A':
+                adventure_active = move_in_dungeon(&dungeon, -1, 0);
+                break;
+
+            case 'S':
+                adventure_active = move_in_dungeon(&dungeon, 0, 1);
+                break;
+
+            case 'D':
+                adventure_active = move_in_dungeon(&dungeon, 1, 0);
+                break;
+
+            default:
+                printf("Неизвестная команда. Используйте W, A, S, D или Q.\n");
+        }
+    }
+
+    free_dungeon(&dungeon);
+    printf("Приключение завершено. Вы вернулись в меню фермы.\n");
+}
+
 int main(void)
 {
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleTitleW(L"Ферма");
+    srand((unsigned int)time(NULL));
 
     int day = 1;
     int hour = 8;
@@ -640,7 +812,8 @@ int main(void)
         printf("3 - Инвентарь\n4 - Положить предмет\n5 - Выбросить предмет\n");
         printf("6 - Любимый ресурс\n7 - Поиск предмета по названию\n");
         printf("8 - Записать состояние в дневник\n");
-        printf("9 - Поиск в энциклопедии\n10 - Удалить предметы по ID\n");
+        printf("9 - Поиск в энциклопедии\n10 - Отправиться в приключение\n");
+        printf("11 - Удалить предметы по ID\n");
 
         if (!read_number("Выберите действие: ", &choice))
         {
@@ -835,6 +1008,10 @@ int main(void)
             }
 
             case 10:
+                run_adventure();
+                break;
+
+            case 11:
             {
                 int id;
                 int cleared = 0;
