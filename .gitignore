@@ -1,7 +1,7 @@
 main
-.exe
-.o
-.out
-.vs/
+*.exe
+*.o
+*.out
+*.vs/
 diary.txt
 output.txt
